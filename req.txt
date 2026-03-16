@@ -1,0 +1,10 @@
+express
+multer
+mysql2
+path
+fs
+promises
+dotenv
+helmet
+express-rate-limit
+cors

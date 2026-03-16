@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎬 Multimedia Blog</title>
+    <style>
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #f4f4f4;
+        margin: 0;
+        color: #333;
+      }
+      header {
+        background: linear-gradient(90deg, #3f2b96, #a8c0ff);
+        color: white;
+        text-align: center;
+        padding: 2rem 1rem;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+      }
+      header p {
+        margin: 0.5rem 0 0;
+        opacity: 0.9;
+        font-family: monospace;
+      }
+      main {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      form,
+      .post {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        padding: 0.9rem;
+        margin: 0.6rem 0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+      button {
+        background: #3f2b96;
+        color: white;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2c1e6e;
+      }
+      img,
+      video,
+      audio {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 8px;
+        margin-top: 1rem;
+        display: block;
+      }
+      .post small {
+        color: #666;
+        display: block;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🎨 MULTIMEDIA BLOG</h1>
+      <p>Local Development Version</p>
+    </header>
+
+    <main>
+      <form id="postForm" enctype="multipart/form-data">
+        <h2>Create Your Post</h2>
+        <input
+          type="text"
+          name="title"
+          placeholder="Title"
+          maxlength="255"
+          required
+        />
+        <textarea
+          name="content"
+          placeholder="Content..."
+          maxlength="5000"
+          required
+        ></textarea>
+
+        <label>Image (jpg/png)</label>
+        <input
+          title="image"
+          type="file"
+          name="image"
+          accept="image/jpeg,image/png"
+        />
+
+        <label>Audio (mp3/m4a)</label>
+        <input
+          title="audio"
+          type="file"
+          name="audio"
+          accept="audio/mp3,audio/m4a"
+        />
+
+        <label>Video (mp4)</label>
+        <input title="video" type="file" name="video" accept="video/mp4" />
+
+        <button type="submit">Publish</button>
+      </form>
+
+      <h2>📰 YOUR POSTS</h2>
+      <div id="posts">Loading posts...</div>
+    </main>
+
+    <script>
+      const API_BASE = "http://localhost:3000";
+
+      async function loadPosts() {
+        const container = document.getElementById("posts");
+        container.innerHTML = "<p>Loading posts...</p>";
+
+        try {
+          const res = await fetch(`${API_BASE}/posts`);
+          if (!res.ok) throw new Error("Network error");
+          const posts = await res.json();
+
+          container.innerHTML = "";
+
+          if (posts.length === 0) {
+            container.innerHTML = "<p>No posts yet. Be the first!</p>";
+            return;
+          }
+
+          posts.forEach((p) => {
+            const div = document.createElement("div");
+            div.className = "post";
+
+            div.innerHTML = `
+        <h3>${p.Title}</h3>
+        <p>${p.Content.replace(/\n/g, "<br>")}</p>
+        <small>${new Date(p.Date_Posted).toLocaleString()}</small>
+      `;
+
+            if (p.Image_URL) {
+              const img = document.createElement("img");
+              img.src = `${API_BASE}/${p.Image_URL}`;
+              img.alt = "Post image";
+              div.appendChild(img);
+            }
+
+            if (p.Audio_URL) {
+              const audio = document.createElement("audio");
+              audio.controls = true;
+              audio.src = `${API_BASE}/${p.Audio_URL}`;
+              div.appendChild(audio);
+            }
+
+            if (p.Video_URL) {
+              const video = document.createElement("video");
+              video.controls = true;
+              video.preload = "metadata";
+              video.src = `${API_BASE}/${p.Video_URL}`;
+              div.appendChild(video);
+            }
+
+            container.appendChild(div);
+          });
+        } catch (err) {
+          console.error(err);
+          container.innerHTML =
+            "<p style='color:red'>Failed to load posts. Server not connected.</p>";
+        }
+      }
+
+      // Posts submission
+      document
+        .getElementById("postForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const formData = new FormData(form);
+
+          try {
+            const res = await fetch(`${API_BASE}/posts`, {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              alert(data.error || "Upload failed – check console");
+              console.log(data);
+              return;
+            }
+
+            alert("Post published!");
+            form.reset();
+            loadPosts();
+          } catch (err) {
+            alert("Connection error.");
+            console.error(err);
+          }
+        });
+
+      // Load posts on page load
+      loadPosts();
+    </script>
+  </body>
+</html>
